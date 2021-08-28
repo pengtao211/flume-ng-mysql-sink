@@ -17,6 +17,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.stream.IntStream;
 
 public class MysqlSink extends AbstractSink implements Configurable {
 
@@ -31,6 +32,9 @@ public class MysqlSink extends AbstractSink implements Configurable {
     private Connection conn;
     private int batchSize;
 //    private String url;
+    private String columns;
+    private String sql;
+    private String[] paras_list;
 
     public MysqlSink() {
         LOG.info("MysqlSink start...");
@@ -56,6 +60,8 @@ public class MysqlSink extends AbstractSink implements Configurable {
         Preconditions.checkNotNull(batchSize > 0, "batchSize must be a positive number!!");
 //        url = context.getString("url");
 //        Preconditions.checkNotNull(url, "hostname must be url!!");
+        columns = context.getString("columns");
+        Preconditions.checkNotNull(columns, "columns must be set!!");
     }
 
     @Override
@@ -75,8 +81,14 @@ public class MysqlSink extends AbstractSink implements Configurable {
             conn = DriverManager.getConnection(url, user, password);
             conn.setAutoCommit(false);
             //创建一个Statement对象
-            preparedStatement = conn.prepareStatement("insert into " + tableName +
-                    " (content,status,create_time) values  (?,0,now())");
+//            preparedStatement = conn.prepareStatement("insert into " + tableName +
+//                    " (content,status,create_time) values  (?,0,now())");
+            paras_list = columns.split(",");
+            IntStream.range(0, paras_list.length).forEach(i -> paras_list[i] = "?");
+            String parameters = Arrays.toString(paras_list).replace("[" ,"").replace("]","");
+            sql = String.format("insert into %s(%s) values (%s)",tableName,columns,parameters);
+            LOG.info(sql);
+            preparedStatement = conn.prepareStatement(sql);
 
 
         } catch (SQLException e) {
@@ -120,6 +132,10 @@ public class MysqlSink extends AbstractSink implements Configurable {
                 if (event != null) {//对事件进行处理
                     //event 的 body 为   "exec tail$i , abel"
                     content = new String(event.getBody());
+                    if (content.split(",").length != paras_list.length) {
+                        LOG.error(String.format("'%s' number has not enough", content));
+                        continue;
+                    }
                     contents.add(content);
 
                 } else {
