@@ -52,9 +52,10 @@ public class MysqlSink extends AbstractSink implements Configurable {
         user = context.getString("user");
         Preconditions.checkNotNull(user, "user must be set!!");
 
-        password = new String(Base64.getDecoder().decode(context.getString("password")));
-        password = password.substring(0, password.indexOf(","));
+//        password = new String(Base64.getDecoder().decode(context.getString("password")));
+//        password = password.substring(0, password.indexOf(","));
 
+        password = context.getString("password");
         Preconditions.checkNotNull(password, "password must be set!!");
         batchSize = context.getInteger("batchSize", 100);
         Preconditions.checkNotNull(batchSize > 0, "batchSize must be a positive number!!");
@@ -125,6 +126,7 @@ public class MysqlSink extends AbstractSink implements Configurable {
         Event event;
         String content;
         List<String> contents = new ArrayList<>();
+        String[] values;
         transaction.begin();
         try {
             for (int i = 0; i < batchSize; i++) {
@@ -147,7 +149,10 @@ public class MysqlSink extends AbstractSink implements Configurable {
             if (contents.size() > 0) {
                 preparedStatement.clearBatch();
                 for (String temp : contents) {
-                    preparedStatement.setString(1, temp);
+                    values = temp.split(",");
+                    for (int i = 1; i <= values.length; i++) {
+                        preparedStatement.setString(i, values[i - 1]);
+                    }
                     preparedStatement.addBatch();
                 }
                 preparedStatement.executeBatch();
