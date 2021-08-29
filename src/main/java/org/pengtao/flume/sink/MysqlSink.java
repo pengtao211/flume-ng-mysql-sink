@@ -91,7 +91,6 @@ public class MysqlSink extends AbstractSink implements Configurable {
             LOG.info(sql);
             preparedStatement = conn.prepareStatement(sql);
 
-
         } catch (SQLException e) {
             e.printStackTrace();
             System.exit(1);
