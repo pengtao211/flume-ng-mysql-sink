@@ -75,7 +75,8 @@ public class MysqlSink extends AbstractSink implements Configurable {
             e.printStackTrace();
         }
 
-        String url = "jdbc:mysql://" + hostname + ":" + port + "/" + databaseName;
+        String url = "jdbc:mysql://" + hostname + ":" + port + "/" + databaseName +
+                "?useUnicode=true&characterEncoding=UTF-8";
         //调用DriverManager对象的getConnection()方法，获得一个Connection对象
 
         try {
@@ -93,7 +94,7 @@ public class MysqlSink extends AbstractSink implements Configurable {
 
         } catch (SQLException e) {
             e.printStackTrace();
-            System.exit(1);
+//            System.exit(1);
         }
 
     }
@@ -134,7 +135,7 @@ public class MysqlSink extends AbstractSink implements Configurable {
                     //event 的 body 为   "exec tail$i , abel"
                     content = new String(event.getBody());
                     if (content.split(",").length != paras_list.length) {
-                        LOG.error(String.format("'%s' number has not enough", content));
+                        LOG.error(String.format("'%s' separator number has not enough,skip this one", content));
                         continue;
                     }
                     contents.add(content);
